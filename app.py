@@ -63,11 +63,10 @@ db = {
         "Baby Potatoes (土豆)": {"p": 2, "c": 17, "cal": 77, "price": 1.2}
     },
     "Veggies": {
-       # --- 深色叶菜 (微量元素之王) ---
+    # --- 深色叶菜 (微量元素之王) ---
     "Spinach (菠菜 - 高镁钾)": {"p": 2.9, "cal": 23, "price": 2.5, "type": "leafy"},
-    "Choy Sum (菜心 - 本地推荐)": {"p": 1.5, "cal": 13, "price": 1.8, "type": "leafy"},
+    "Choy Sum (菜心 - 本地推荐)": {"p": 1.5, "cal": 13, "type": "leafy"},
     "Kale (羽衣甘蓝 - 深度减脂)": {"p": 4.3, "cal": 49, "price": 8.5, "type": "leafy"},
-    
     # --- 十字花科与根茎类 ---
     "Broccoli (西兰花)": {"p": 2.8, "cal": 34, "price": 1.5, "type": "cruciferous"},
     "Okra (羊角豆)": {"p": 1.9, "cal": 33, "price": 1.0, "type": "fiber"},
@@ -184,7 +183,7 @@ with tab1:
         lcg = st.slider("克数 (g)", 0, 350, 150, 10, key="lcg")
         
         # 蔬菜选择 + 脑雾逻辑预警
-        lv = st.multiselect("蔬菜 (建议包含深色叶菜)", list(db["Veggies"].keys()), default=["Choy Sum (菜心-本地推荐)"], key="lv")
+        lv = st.multiselect("蔬菜 (防脑雾必选深色叶菜)", list(db["Veggies"].keys()), default=["Choy Sum (菜心 - 本地推荐)"], key="lv")
         if not any(db["Veggies"][v].get("type") == "leafy" for v in lv):
             st.warning("⚠️ **脑雾预警**：检测到缺少深色叶菜！这会导致镁/钾不足，影响交易效率。")
             
