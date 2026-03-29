@@ -4,92 +4,56 @@ import random
 import urllib.parse
 import math
 
-# 1. 网页全局配置
-st.set_page_config(page_title="MySukuSuku Master Ultra Pro", page_icon="🧬", layout="wide")
+# 1. 网页全局配置：把 wide 改成 centered，这是让网页瞬间变精致的秘密
+st.set_page_config(page_title="MySukuSuku Master", page_icon="🧬", layout="centered")
 
-# --- 极致移动端 App 化 CSS 注入 ---
+# 2. 全新精简版 CSS 注入：只做最稳妥的美化，不破坏原有组件
 st.markdown("""
     <style>
-    /* 1. 隐藏 Streamlit 官方自带的顶部菜单、页脚和右上角 GitHub 链接 (提升专业度) */
+    /* 隐藏顶部和底部的官方水印 */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 2. 全局背景与字体优化 (接近苹果 iOS 质感) */
-    .stApp {
-        background-color: #f4f6f9;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* 调整主体宽度，比默认的稍宽一点点，但绝不拉伸全屏 */
+    .block-container {
+        max-width: 900px;
+        padding-top: 2rem;
     }
-    
-    /* 3. 核心数据指标 (Metrics) 卡片化设计 */
-    [data-testid="stMetric"] {
+
+    /* 侧边栏标题优化，防止换行 */[data-testid="stSidebar"] h1 {
+        font-size: 1.5rem !important;
+    }
+
+    /* 指标卡片 (Metrics) 增加悬浮阴影，更有质感 */[data-testid="stMetric"] {
         background-color: #ffffff;
-        padding: 15px 20px;
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        border: 1px solid #f0f0f0;
-        transition: transform 0.2s ease-in-out;
-    }
-    [data-testid="stMetric"]:hover {
-        transform: translateY(-2px); /* 鼠标悬停时的微互动 */
-    }
-    
-    /* 4. Tabs 标签页伪装成 App 顶部导航栏 */
-    .stTabs[data-baseweb="tab-list"] {
-        gap: 8px;
-        padding: 5px;
-        background-color: #eef2f6;
+        padding: 15px;
         border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #f0f4f8;
     }
-    .stTabs [data-baseweb="tab"] {
-        height: 45px;
-        border-radius: 8px;
-        padding: 0 16px;
-        font-weight: 600;
-        border: none !important;
-        background-color: transparent;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #ffffff !important;
-        color: #ff4b4b !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    
-    /* 5. 侧边栏 (Sidebar) 质感提升 */
-    [data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #eef2f6;
-    }
-    
-    /* 6. WhatsApp 按钮优化：变成通栏大按钮 (非常适合手机大拇指点击) */
+
+    /* WhatsApp 按钮改为全宽大按钮 */
     .whatsapp-button {
         display: block;
         width: 100%;
-        padding: 14px 0;
-        background: linear-gradient(135deg, #25D366, #128C7E);
+        padding: 15px;
+        background: #25D366;
         color: white !important;
         text-align: center;
-        text-decoration: none !important;
-        font-size: 16px;
-        font-weight: bold;
         border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
-        margin-top: 20px;
-        transition: opacity 0.3s;
+        text-decoration: none !important;
+        font-weight: 800;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(37,211,102,0.3);
+        margin-top: 10px;
+        transition: 0.2s;
     }
-    .whatsapp-button:hover {
-        opacity: 0.9;
-    }
-    
-    /* 7. 手机端边距极限压缩 (让手机屏幕显示更多内容) */
-    .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
-        max-width: 800px; /* 居中显示，电脑上看也不会太宽 */
-    }
+    .whatsapp-button:hover { background: #128C7E; transform: translateY(-2px); }
     </style>
     """, unsafe_allow_html=True)
 
+ 
 # 2. 核心数据库 (针对“幸存者偏差”修正蛋白含量为生重数据，并调高缩水率)
 db = {
     "Breakfast": {
@@ -141,19 +105,14 @@ db = {
 }
 
 # --- 科学计算逻辑 ---
-st.sidebar.title("🧬 科学营养分析系统")
-with st.sidebar.expander("👤 输入身体指标 (必填)", expanded=True):
-    weight = st.number_input("当前体重 (kg)", 40.0, 150.0, 80.0)
-    height = st.number_input("当前身高 (cm)", 120.0, 220.0, 175.0)
-    age = st.number_input("当前年龄", 15, 85, 25)
-    gender = st.selectbox("性别", ["男", "女"])
-    activity = st.selectbox("活动水平", [
-        "久坐 (办公室/交易员)", 
-        "轻度活动 (每周运动1-2天)", 
-        "中度活动 (每周运动3-5天)", 
-        "高度活动 (每天高强度运动)"
-    ])
-    user_goal = st.selectbox("核心目标", ["维持体重", "减脂 (Cut)", "增肌 (Bulk)"], index=1)
+st.sidebar.title("🧬 营养分析系统") # 缩短标题，防止换行
+with st.sidebar.expander("👤 身体指标 (点击修改)", expanded=True):
+    weight = st.number_input("体重 (kg)", 40.0, 150.0, 80.0)
+    height = st.number_input("身高 (cm)", 120.0, 220.0, 175.0)
+    age = st.number_input("年龄", 15, 85, 25)
+    gender = st.selectbox("性别",["男", "女"])
+    activity = st.selectbox("活动水平",["久坐办公", "轻度运动", "中度运动", "高度运动"]) # 缩短文字
+    user_goal = st.selectbox("核心目标",["维持体重", "减脂 (Cut)", "增肌 (Bulk)"], index=1)
 
 bmi = weight / ((height/100)**2)
 if gender == "男":
@@ -179,13 +138,12 @@ else:
 
 # --- 侧边栏视觉与逻辑增强 ---
 st.sidebar.divider()
-st.sidebar.subheader("🎯 每日营养目标")
+st.sidebar.markdown("### 🎯 每日目标")
 
 # 使用列布局，让数据更紧凑
 col_t1, col_t2 = st.sidebar.columns(2)
-col_t1.metric("⚖️ 维持热量 (TDEE)", f"{int(tdee)}")
-col_t2.metric("🔥 目标热量", f"{int(target_cal)}", delta=f"{int(target_cal - tdee)} kcal", delta_color="inverse")
-
+col_t1.metric("维持热量", f"{int(tdee)}")
+col_t2.metric("目标热量", f"{int(target_cal)}", delta=f"{int(target_cal - tdee)}", delta_color="inverse")
 # 完整显示三大营养素
 st.sidebar.markdown(f"""
 | 营养素 | 目标摄入量 | 备注 |
@@ -207,8 +165,8 @@ else:
 
 # 增加一个简单的进度条：80kg -> 70kg
 progress = max(0, min(100, int((80 - weight) / (80 - 70) * 100)))
-st.sidebar.write(f"🏃‍♂️ 减脂总进度: {progress}%")
-st.sidebar.progress(progress / 100)
+st.sidebar.write(f"🏃‍♂️ 减脂总进度: 70kg 目标")
+st.sidebar.progress(max(0, min(100, int((80 - weight) / (80 - 70) * 100))) / 100)
 
 # --- 辅助计算函数 (保留你的逻辑) ---
 def calc_meal(p_n, p_g, c_n, c_g, v_list, s_n, f_n):
@@ -223,52 +181,61 @@ def calc_meal(p_n, p_g, c_n, c_g, v_list, s_n, f_n):
     return tp, tf, tc
 
 # --- 主界面 ---
-st.title("🔥 MySukuSuku Master: 全方位科学备餐系统")
+st.title("🔥 MySukuSuku Master")
 st.info(f"📍 目标状态：{user_goal} | 建议摄入：{int(target_cal)} kcal | 地区建议：Johor/Local Market")
 
 tab1, tab2, tab3 = st.tabs(["🏗️ 每日自由组装", "📅 5天自动计划", "👨‍🍳 烹饪备忘录"])
 
 with tab1:
-    st.subheader("🍳 早、午、晚三餐配置")
-    bf_c = st.selectbox("☀️ 早餐选择", list(db["Breakfast"].keys()))
+    # 早餐单独放一个卡片
+    with st.container(border=True):
+        bf_c = st.selectbox("☀️ 早餐选择", list(db["Breakfast"].keys()))
+    
     col_l, col_r = st.columns(2)
     
+    # 午餐装进带边框的容器 (卡片效果)
     with col_l:
-        st.markdown("### 🍱 午餐设定")
-        lp = st.selectbox("蛋白质", list(db["Protein"].keys()), key="lp")
-        lpg = st.slider("生重 (g)", 50, 400, 150, 10, key="lpg")
-        lc = st.selectbox("碳水", list(db["Carbs"].keys()), key="lc")
-        lcg = st.slider("克数 (g)", 0, 350, 150, 10, key="lcg")
-        
-        # 蔬菜选择 + 脑雾逻辑预警
-        lv = st.multiselect("蔬菜 (防脑雾必选深色叶菜)", list(db["Veggies"].keys()), default=["Choy Sum (菜心 - 本地推荐)"], key="lv")
-        if not any(db["Veggies"][v].get("type") == "leafy" for v in lv):
-            st.warning("⚠️ **脑雾预警**：检测到缺少深色叶菜！这会导致镁/钾不足，影响交易效率。")
+        with st.container(border=True):
+            st.markdown("### 🍱 午餐设定")
+            lp = st.selectbox("蛋白质", list(db["Protein"].keys()), key="lp")
+            lpg = st.slider("生重 (g)", 50, 400, 150, 10, key="lpg")
+            lc = st.selectbox("碳水", list(db["Carbs"].keys()), key="lc")
+            lcg = st.slider("碳水 (g)", 0, 350, 150, 10, key="lcg")
             
-        ls, lf = st.selectbox("酱料", list(db["Sauces"].keys()), key="ls"), st.selectbox("优质脂肪 (必选)", list(db["Healthy Fats"].keys()), key="lf")
-        lp_p, lp_f, lp_cal = calc_meal(lp, lpg, lc, lcg, lv, ls, lf)
+            lv = st.multiselect("蔬菜 (深色优先)", list(db["Veggies"].keys()), default=["Choy Sum (菜心 - 本地推荐)"], key="lv")
+            if not any(db["Veggies"][v].get("type") == "leafy" for v in lv):
+                st.warning("⚠️ 脑雾预警：缺少深色叶菜 (缺镁/钾)！")
+                
+            ls = st.selectbox("酱料", list(db["Sauces"].keys()), key="ls")
+            lf = st.selectbox("优质脂肪", list(db["Healthy Fats"].keys()), key="lf")
+            lp_p, lp_f, lp_cal = calc_meal(lp, lpg, lc, lcg, lv, ls, lf)
+            
+    # 晚餐装进带边框的容器 (卡片效果)
     with col_r:
-        st.markdown("### 🍽️ 晚餐设定")
-        dp = st.selectbox("选择蛋白质", list(db["Protein"].keys()), key="dp")
-        dpg = st.slider("蛋白质克数", 50, 400, 150, 10, key="dpg")
-        dc = st.selectbox("选择碳水", list(db["Carbs"].keys()), key="dc")
-        dcg = st.slider("碳水克数", 0, 350, 50, 10, key="dcg")
-        dv = st.multiselect("添加蔬菜", list(db["Veggies"].keys()), default=["Okra (羊角豆)"], key="dv")
-        df = st.selectbox("选择优质脂肪 (晚餐)", list(db["Healthy Fats"].keys()), key="df")
-        ds = st.selectbox("调味酱料", list(db["Sauces"].keys()), key="ds")
-        dp_p, dp_f, dp_cal = calc_meal(dp, dpg, dc, dcg, dv, ds, df)
-    st.divider()
-    day_p = db["Breakfast"][bf_c]['p'] + lp_p + dp_p
-    day_cal = db["Breakfast"][bf_c]['cal'] + lp_cal + dp_cal
-    m1, m2, m3 = st.columns(3)
-    m1.metric("今日总热量", f"{int(day_cal)} kcal", delta=f"{int(day_cal - target_cal)} vs 建议")
-    m2.metric("今日总蛋白", f"{int(day_p)} g", delta=f"{int(day_p - target_p)} vs 建议")
-    with m3:
-        st.write(f"**蛋白达标率**: {int(day_p/target_p*100)}%")
-        st.progress(min(day_p / target_p, 1.0))
-        if day_cal > target_cal:
-            st.warning("⚠️ 摄入超标，建议减少主食分量。")
-
+        with st.container(border=True):
+            st.markdown("### 🍽️ 晚餐设定")
+            dp = st.selectbox("蛋白质", list(db["Protein"].keys()), key="dp")
+            dpg = st.slider("生重 (g) ", 50, 400, 150, 10, key="dpg")
+            dc = st.selectbox("碳水 ", list(db["Carbs"].keys()), key="dc")
+            dcg = st.slider("碳水 (g) ", 0, 350, 50, 10, key="dcg")
+            dv = st.multiselect("添加蔬菜", list(db["Veggies"].keys()), default=["Okra (羊角豆)"], key="dv")
+            df = st.selectbox("优质脂肪", list(db["Healthy Fats"].keys()), key="df")
+            ds = st.selectbox("调味酱料", list(db["Sauces"].keys()), key="ds")
+            dp_p, dp_f, dp_cal = calc_meal(dp, dpg, dc, dcg, dv, ds, df)
+            
+    # 总计卡片
+    with st.container(border=True):
+        st.markdown("### 📊 今日总计")
+        day_p = db["Breakfast"][bf_c]['p'] + lp_p + dp_p
+        day_cal = db["Breakfast"][bf_c]['cal'] + lp_cal + dp_cal
+        m1, m2, m3 = st.columns(3)
+        m1.metric("今日总热量", f"{int(day_cal)} kcal", delta=f"{int(day_cal - target_cal)} vs 建议")
+        m2.metric("今日总蛋白", f"{int(day_p)} g", delta=f"{int(day_p - target_p)} vs 建议")
+        with m3:
+            st.write(f"**蛋白达标率**: {int(day_p/target_p*100)}%")
+            st.progress(min(day_p / target_p, 1.0))
+            if day_cal > target_cal:
+                st.error("⚠️ 摄入超标，建议减少主食分量。")
 with tab2:
     st.subheader("📅 工作日 5 天高效备餐计划 (拒接零碎采购)")
     
