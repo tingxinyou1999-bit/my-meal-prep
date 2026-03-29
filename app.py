@@ -111,7 +111,7 @@ with st.sidebar.expander("👤 身体指标 (点击修改)", expanded=True):
     height = st.number_input("身高 (cm)", 120.0, 220.0, 175.0)
     age = st.number_input("年龄", 15, 85, 25)
     gender = st.selectbox("性别",["男", "女"])
-    activity = st.selectbox("活动水平",["久坐办公", "轻度运动", "中度运动", "高度运动"]) # 缩短文字
+    activity = st.selectbox("活动水平",["久坐", "轻度运动", "中度运动", "高度运动"]) # 缩短文字
     user_goal = st.selectbox("核心目标",["维持体重", "减脂 (Cut)", "增肌 (Bulk)"], index=1)
 
 bmi = weight / ((height/100)**2)
@@ -120,7 +120,7 @@ if gender == "男":
 else:
     bmr = 10 * weight + 6.25 * height - 5 * age - 161
 
-activity_factors = {"久坐 (办公室/交易员)": 1.2, "轻度活动 (每周运动1-2天)": 1.375, "中度活动 (每周运动3-5天)": 1.55, "高度活动 (每天高强度运动)": 1.725}
+activity_factors = {"久坐": 1.2, "轻度活动 (每周运动1-2天)": 1.375, "中度活动 (每周运动3-5天)": 1.55, "高度活动 (每天高强度运动)": 1.725}
 tdee = bmr * activity_factors[activity]
 
 if user_goal == "减脂 (Cut)":
