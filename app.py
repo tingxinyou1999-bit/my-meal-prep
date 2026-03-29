@@ -7,31 +7,89 @@ import math
 # 1. 网页全局配置
 st.set_page_config(page_title="MySukuSuku Master Ultra Pro", page_icon="🧬", layout="wide")
 
-# 自定义 CSS 提升 UI 质感 (保留并增强)
+# --- 极致移动端 App 化 CSS 注入 ---
 st.markdown("""
     <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .stTabs [data-baseweb="tab-list"] { gap: 24px; }
-    .stTabs [data-baseweb="tab"] { height: 50px; white-space: pre-wrap; background-color: #f0f2f6; border-radius: 5px 5px 0 0; padding: 10px 20px; }
-    .stTabs [aria-selected="true"] { background-color: #ff4b4b !important; color: white !important; }
+    /* 1. 隐藏 Streamlit 官方自带的顶部菜单、页脚和右上角 GitHub 链接 (提升专业度) */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* 2. 全局背景与字体优化 (接近苹果 iOS 质感) */
+    .stApp {
+        background-color: #f4f6f9;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    /* 3. 核心数据指标 (Metrics) 卡片化设计 */
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        padding: 15px 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border: 1px solid #f0f0f0;
+        transition: transform 0.2s ease-in-out;
+    }
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-2px); /* 鼠标悬停时的微互动 */
+    }
+    
+    /* 4. Tabs 标签页伪装成 App 顶部导航栏 */
+    .stTabs[data-baseweb="tab-list"] {
+        gap: 8px;
+        padding: 5px;
+        background-color: #eef2f6;
+        border-radius: 12px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 45px;
+        border-radius: 8px;
+        padding: 0 16px;
+        font-weight: 600;
+        border: none !important;
+        background-color: transparent;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #ffffff !important;
+        color: #ff4b4b !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    
+    /* 5. 侧边栏 (Sidebar) 质感提升 */
+    [data-testid="stSidebar"] {
+        background-color: #ffffff;
+        border-right: 1px solid #eef2f6;
+    }
+    
+    /* 6. WhatsApp 按钮优化：变成通栏大按钮 (非常适合手机大拇指点击) */
     .whatsapp-button {
-        display: inline-block;
-        padding: 12px 24px;
-        background-color: #25D366;
+        display: block;
+        width: 100%;
+        padding: 14px 0;
+        background: linear-gradient(135deg, #25D366, #128C7E);
         color: white !important;
         text-align: center;
         text-decoration: none !important;
+        font-size: 16px;
         font-weight: bold;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        cursor: pointer;
-        margin-top: 10px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+        margin-top: 20px;
+        transition: opacity 0.3s;
+    }
+    .whatsapp-button:hover {
+        opacity: 0.9;
+    }
+    
+    /* 7. 手机端边距极限压缩 (让手机屏幕显示更多内容) */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 800px; /* 居中显示，电脑上看也不会太宽 */
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 核心数据库 (完全保留你的原始数据)
 # 2. 核心数据库 (针对“幸存者偏差”修正蛋白含量为生重数据，并调高缩水率)
 db = {
     "Breakfast": {
@@ -168,8 +226,7 @@ def calc_meal(p_n, p_g, c_n, c_g, v_list, s_n, f_n):
 st.title("🔥 MySukuSuku Master: 全方位科学备餐系统")
 st.info(f"📍 目标状态：{user_goal} | 建议摄入：{int(target_cal)} kcal | 地区建议：Johor/Local Market")
 
-# 将原来的 3 改成 4，并增加一个标题
-tab1, tab2, tab3, tab4 = st.tabs(["🏗️ 自由组装", "📅 5天计划", "👨‍🍳 烹饪备忘录", "🚫 避雷图鉴"])
+tab1, tab2, tab3 = st.tabs(["🏗️ 每日自由组装", "📅 5天自动计划", "👨‍🍳 烹饪备忘录"])
 
 with tab1:
     st.subheader("🍳 早、午、晚三餐配置")
@@ -213,109 +270,83 @@ with tab1:
             st.warning("⚠️ 摄入超标，建议减少主食分量。")
 
 with tab2:
-    st.markdown("### 🗓️ 5天高效备餐计划 (Precision Prep)")
+    st.subheader("📅 工作日 5 天高效备餐计划 (拒接零碎采购)")
     
-    # --- 1. 配置中心 (使用容器美化) ---
-    with st.container():
-        st.markdown("""
-            <style>
-            .config-box {
-                background-color: #f0f2f6;
-                padding: 20px;
-                border-radius: 15px;
-                border: 1px solid #dfe3e6;
-                margin-bottom: 25px;
-            }
-            </style>
-            <div class="config-box">
-                <p style="font-weight: bold; margin-bottom: 5px;">⚙️ 自动化配置中心</p>
-                <span style="font-size: 0.85em; color: #666;">选择你本周在 Pasar 购买的主力食材，系统将自动分配。</span>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        c_opt1, c_opt2 = st.columns(2)
-        with c_opt1:
-            main_protein = st.multiselect(
-                "🥩 核心蛋白质 (建议选2种交替)", 
-                list(db["Protein"].keys()), 
-                default=["Chicken Breast (鸡胸)", "Ikan Kembung (甘榜鱼)"]
-            )
-        with c_opt2:
-            main_carb = st.selectbox("🍚 核心碳水 (建议选1种)", list(db["Carbs"].keys()), index=0)
+    # 1. 选择器：先定基调，再生成计划
+    col_opt1, col_opt2 = st.columns(2)
+    with col_opt1:
+        # 默认选中鸡胸和甘榜鱼，符合大马 Pasar 采购习惯
+        main_protein = st.multiselect(
+            "核心蛋白质 (建议选2种)", 
+            list(db["Protein"].keys()), 
+            default=["Chicken Breast (鸡胸)", "Ikan Kembung (甘榜鱼)"]
+        )
+    with col_opt2:
+        main_carb = st.selectbox("核心碳水 (建议选1种)", list(db["Carbs"].keys()), index=0)
 
-    # --- 2. 生成逻辑 ---
-    if st.button("🪄 立即生成我的高效周计划"):
+    # 2. 逻辑执行按钮
+    if st.button("🪄 生成本周高效采购清单 & 计划"):
         if not main_protein:
-            st.error("请至少选择一种蛋白质，保持肌肉代谢！")
+            st.error("请至少选择一种蛋白质，否则你只能吃草了。")
         else:
             shopping = {}
-            st.divider()
+            st.write("### 🗓️ 5天重复循环方案 (降低烹饪复杂度)")
             
-            # --- 3. 5天计划流布局 ---
-            # 使用 CSS 打造纵向时间轴质感
-            st.markdown("""
-                <style>
-                .day-card {
-                    border-left: 5px solid #ff4b4b;
-                    background-color: white;
-                    padding: 15px;
-                    border-radius: 0 10px 10px 0;
-                    box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
-                    margin-bottom: 15px;
-                }
-                .meal-tag {
-                    font-size: 0.8em;
-                    padding: 2px 8px;
-                    border-radius: 5px;
-                    font-weight: bold;
-                    margin-right: 5px;
-                }
-                .breakfast { background-color: #e1f5fe; color: #01579b; }
-                .lunch { background-color: #e8f5e9; color: #1b5e20; }
-                .dinner { background-color: #fff3e0; color: #e65100; }
-                </style>
-            """, unsafe_allow_html=True)
-
+            # 3. 循环生成 5 天安排
             days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
             for i, day in enumerate(days):
+                # 核心修改：通过取余 % 实现蛋白质交替，避免每天买不同肉
                 p_n = main_protein[i % len(main_protein)]
-                # 随机分配蔬菜增加微量元素多样性
+                c_n = main_carb
+                # 随机选2种蔬菜增加多样性
                 v_s = random.sample(list(db["Veggies"].keys()), 2)
                 
-                # 计算生重
+                # 计算生重并累加到采购清单
+                # 300g 熟重对应的生重 = 300 * raw_ratio
                 raw_p = 300 * db["Protein"][p_n].get("raw_ratio", 1.2)
                 shopping[p_n] = shopping.get(p_n, 0) + raw_p
                 
-                # 展示日计划
-                with st.container():
-                    st.markdown(f"#### 📍 {day}")
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.markdown(f'<div class="day-card"><span class="meal-tag breakfast">🌅 早餐</span><br><br>{list(db["Breakfast"].keys())[0]}</div>', unsafe_allow_html=True)
-                    with col2:
-                        st.markdown(f'<div class="day-card" style="border-left-color: #4caf50;"><span class="meal-tag lunch">🍱 午餐</span><br><br>150g {p_n}<br>150g {main_carb}<br>🥗 {v_s[0]}</div>', unsafe_allow_html=True)
-                    with col3:
-                        st.markdown(f'<div class="day-card" style="border-left-color: #ff9800;"><span class="meal-tag dinner">🍽️ 晚餐</span><br><br>150g {p_n}<br>🥗 {v_s[1]}<br><span style="font-size:0.8em; color:gray;">(低碳模式)</span></div>', unsafe_allow_html=True)
+                # 碳水同样考虑缩水/吸水率
+                raw_c = 200 * 1.1 
+                shopping[c_n] = shopping.get(c_n, 0) + raw_c
 
-            # --- 4. 采购清单美化 ---
+                # 界面展示
+                with st.expander(f"📍 {day} 安排", expanded=(i==0)):
+                    ca, cb, cc = st.columns(3)
+                    # 早餐固定为数据库第一项，减少思考成本
+                    ca.success(f"**🌅 早餐**\n\n{list(db['Breakfast'].keys())[0]}") 
+                    cb.info(f"**🍱 午餐**\n\n150g {p_n}\n\n150g {c_n}\n\n🥗 {v_s[0]}")
+                    cc.warning(f"**🍽️ 晚餐**\n\n150g {p_n}\n\n🥗 {v_s[1]}\n\n(低碳模式)")
+
             st.divider()
-            st.subheader("🛒 本周 Pasar 采购建议 (Johor Market)")
+            st.subheader("🛒 本周 Pasar 采购建议 (已自动取整)")
             
-            wa_text = "🛒 我的高效减脂采购清单:\n\n"
+            # 4. 采购量取整逻辑 (0.5kg 为单位)
             shop_cols = st.columns(len(shopping))
-            for i, (item, weight_g) in enumerate(shopping.items()):
-                rounded = math.ceil(weight_g / 500) * 0.5
-                shop_cols[i].metric(item, f"{rounded:.2f} kg", help="已根据缩水率自动取整至 0.5kg")
-                wa_text += f"- {item}: 约 {rounded:.2f} kg\n"
+            wa_text = "🛒 我的高效减脂采购清单 (Johor Market 版):\n\n"
             
-            # WhatsApp 按钮
-            st.markdown(f'''
-                <div style="text-align: center; margin-top: 20px;">
-                    <a href="https://wa.me/?text={urllib.parse.quote(wa_text)}" target="_blank" class="whatsapp-button">
-                        📲 将清单同步至 WhatsApp
+            for i, (item, weight_g) in enumerate(shopping.items()):
+                # 核心逻辑：向上取整到最接近的 0.5kg，方便 Pasar 大叔切肉
+                rounded_weight = math.ceil(weight_g / 500) * 0.5
+                shop_cols[i].metric(
+                    item, 
+                    f"{rounded_weight:.2f} kg", 
+                    help="已根据缩水率计算生重，并向上取整至 0.5kg"
+                )
+                wa_text += f"- {item}: 约 {rounded_weight:.2f} kg\n"
+            
+            # 5. WhatsApp 导出功能
+            encoded_wa = urllib.parse.quote(wa_text)
+            st.markdown(
+                f'''
+                <div style="text-align: center;">
+                    <a href="https://wa.me/?text={encoded_wa}" target="_blank" class="whatsapp-button">
+                        📲 发送清单到 WhatsApp
                     </a>
                 </div>
-            ''', unsafe_allow_html=True)
+                ''', 
+                unsafe_allow_html=True
+                )
 with tab3:
     st.subheader("👨‍🍳 科学备餐与风味实验室")
     
@@ -347,135 +378,3 @@ with tab3:
         """)
 
     st.success("💡 **专业建议**: 备餐时建议一次性处理 3 天的肉类生重，分袋装好，吃的时候现煎只需 5 分钟，口感远超微波炉加热。")
-
-with tab4:
-    # 注入更高级的 CSS 样式
-    st.markdown("""
-        <style>
-        /* 避雷图鉴专属容器 */
-        .avoid-container {
-            background-color: #1e1e26; /* 深色背景增加专业感 */
-            padding: 25px;
-            border-radius: 20px;
-            color: #ffffff;
-        }
-        
-        /* 增强型避雷卡片 */
-        .premium-avoid-card {
-            background: rgba(255, 255, 255, 0.05); /* 毛玻璃效果 */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .premium-avoid-card:hover {
-            background: rgba(255, 75, 75, 0.1);
-            border-color: #ff4b4b;
-            transform: translateY(-5px);
-        }
-
-        /* 危险等级进度条 */
-        .danger-bar {
-            height: 6px;
-            background-color: #444;
-            border-radius: 3px;
-            margin-top: 15px;
-        }
-        .danger-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ffa502, #ff4b4b);
-            border-radius: 3px;
-        }
-        
-        .food-emoji { font-size: 2em; margin-bottom: 10px; }
-        .food-title { font-size: 1.1em; font-weight: bold; color: #ff6b6b; }
-        .food-stats { font-size: 0.85em; color: #a1a1a1; margin-top: 5px; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div class="avoid-container">', unsafe_allow_html=True)
-    st.markdown("### 🚫 柔佛减脂防雷图鉴 (Avoid List)")
-    st.write("金融交易员专属：血糖稳定 = 情绪稳定 = 交易盈利。")
-
-    # 第一行：高糖陷阱
-    st.markdown("#### 🥤 糖分与脑雾炸弹 (High Sugar)")
-    c1, c2, c3 = st.columns(3)
-    
-    with c1:
-        st.markdown("""
-        <div class="premium-avoid-card">
-            <div class="food-emoji">🥤</div>
-            <div class="food-title">Gula Melaka Drinks</div>
-            <div class="food-stats">含糖量：极高 | 脑雾风险：⭐⭐⭐⭐⭐</div>
-            <div class="danger-bar"><div class="danger-fill" style="width: 95%;"></div></div>
-            <div style="color:#ff4b4b; font-size:0.9em; margin-top:10px;">🔥 250 kcal/杯</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with c2:
-        st.markdown("""
-        <div class="premium-avoid-card">
-            <div class="food-emoji">🥮</div>
-            <div class="food-title">Traditional Kuih</div>
-            <div class="food-stats">含糖量：高 | 饱腹感：极低</div>
-            <div class="danger-bar"><div class="danger-fill" style="width: 85%;"></div></div>
-            <div style="color:#ff4b4b; font-size:0.9em; margin-top:10px;">🔥 150 kcal/件</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with c3:
-        st.markdown("""
-        <div class="premium-avoid-card">
-            <div class="food-emoji">🍧</div>
-            <div class="food-title">Cendol / ABC</div>
-            <div class="food-stats">椰浆+糖浆 | 胰岛素挑战者</div>
-            <div class="danger-bar"><div class="danger-fill" style="width: 90%;"></div></div>
-            <div style="color:#ff4b4b; font-size:0.9em; margin-top:10px;">🔥 400 kcal/份</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # 第二行：高油碳水
-    st.markdown("#### 🍛 高油钠盐杀手 (High Fat & Sodium)")
-    c4, c5, c6 = st.columns(3)
-    
-    with c4:
-        st.markdown("""
-        <div class="premium-avoid-card">
-            <div class="food-emoji">🍛</div>
-            <div class="food-title">Nasi Lemak</div>
-            <div class="food-stats">椰浆饭 | 脂肪肝催化剂</div>
-            <div class="danger-bar"><div class="danger-fill" style="width: 80%;"></div></div>
-            <div style="color:#ff4b4b; font-size:0.9em; margin-top:10px;">🔥 800+ kcal/份</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c5:
-        st.markdown("""
-        <div class="premium-avoid-card">
-            <div class="food-emoji">🍝</div>
-            <div class="food-title">Char Kway Teow</div>
-            <div class="food-stats">镬气 = 深度加工油脂</div>
-            <div class="danger-bar"><div class="danger-fill" style="width: 98%;"></div></div>
-            <div style="color:#ff4b4b; font-size:0.9em; margin-top:10px;">🔥 740 kcal/份</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with c6:
-        st.markdown("""
-        <div class="premium-avoid-card">
-            <div class="food-emoji">🍜</div>
-            <div class="food-title">Instant Maggie</div>
-            <div class="food-stats">钠含量爆炸 | 视觉水肿第一名</div>
-            <div class="danger-bar"><div class="danger-fill" style="width: 75%;"></div></div>
-            <div style="color:#ff4b4b; font-size:0.9em; margin-top:10px;">🔥 450 kcal/包</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # 底部专业 Tips
-    st.info("💡 **交易员避雷心得**：如果在交易时段摄入以上食物，你的大脑会因为消化压力而变得迟钝。为了 70kg 的目标和盈利曲线，请务必管住嘴！")
