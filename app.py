@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import random
 import urllib.parse
+import math
 
 # 1. 网页全局配置
 st.set_page_config(page_title="MySukuSuku Master Ultra Pro", page_icon="🧬", layout="wide")
@@ -31,6 +32,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # 2. 核心数据库 (完全保留你的原始数据)
+# 2. 核心数据库 (针对“幸存者偏差”修正蛋白含量为生重数据，并调高缩水率)
 db = {
     "Breakfast": {
         "2只大号水煮蛋 (Telur Rebus)": {"p": 13, "c": 1, "cal": 155, "price": 1.2},
@@ -39,10 +41,20 @@ db = {
         "蛋白粉奶昔 (Whey Shake)": {"p": 24, "c": 3, "cal": 120, "price": 3.5}
     },
     "Protein": {
-        "Chicken Breast (鸡胸)": {"p": 31, "c": 0, "cal": 165, "price": 2.2, "raw_ratio": 1.25},
-        "Ikan Kembung (甘榜鱼)": {"p": 19, "c": 0, "cal": 125, "price": 1.8, "raw_ratio": 1.15},
+        # 修正：100g 生鸡胸肉蛋白约 22-24g。raw_ratio 调至 1.4 (考虑到大马冷冻肉水分)
+        "Chicken Breast (鸡胸)": {"p": 23, "c": 0, "cal": 110, "price": 2.2, "raw_ratio": 1.4},
+        # 甘榜鱼生重蛋白约 18g，raw_ratio 维持 1.15
+        "Ikan Kembung (甘榜鱼)": {"p": 18, "c": 0, "cal": 125, "price": 1.8, "raw_ratio": 1.15},
+        # 三文鱼生重蛋白约 20g
         "Salmon (三文鱼)": {"p": 20, "c": 0, "cal": 208, "price": 8.5, "raw_ratio": 1.1},
-        "Frozen Prawns (虾仁)": {"p": 24, "c": 0.2, "cal": 99, "price": 4.5, "raw_ratio": 1.05}
+        # 虾仁水分极高，raw_ratio 调高至 1.3
+        "Frozen Prawns (虾仁)": {"p": 18, "c": 0.2, "cal": 90, "price": 4.5, "raw_ratio": 1.3}
+    },
+    "Healthy Fats": {
+        "Extra Virgin Olive Oil (橄榄油)": {"p": 0, "f": 14, "cal": 120, "price": 0.5, "unit": "10ml"},
+        "Avocado (牛油果)": {"p": 2, "f": 15, "cal": 160, "price": 5.0, "unit": "0.5个"},
+        "Mixed Nuts (混合坚果)": {"p": 5, "f": 14, "cal": 170, "price": 3.0, "unit": "30g"},
+        "No Extra Fat": {"p": 0, "f": 0, "cal": 0, "price": 0, "unit": "-"}
     },
     "Carbs": {
         "Brown Rice (糙米)": {"p": 2.6, "c": 23, "cal": 111, "price": 0.5},
@@ -51,10 +63,16 @@ db = {
         "Baby Potatoes (土豆)": {"p": 2, "c": 17, "cal": 77, "price": 1.2}
     },
     "Veggies": {
-        "Broccoli (西兰花)": {"p": 2.8, "cal": 34, "price": 1.5},
-        "Okra (羊角豆)": {"p": 1.9, "cal": 33, "price": 1.0},
-        "Carrot (胡萝卜)": {"p": 0.9, "cal": 41, "price": 0.4},
-        "Cabbage (包菜)": {"p": 1.3, "cal": 25, "price": 0.3}
+       # --- 深色叶菜 (微量元素之王) ---
+    "Spinach (菠菜 - 高镁钾)": {"p": 2.9, "cal": 23, "price": 2.5, "type": "leafy"},
+    "Choy Sum (菜心 - 本地推荐)": {"p": 1.5, "cal": 13, "price": 1.8, "type": "leafy"},
+    "Kale (羽衣甘蓝 - 深度减脂)": {"p": 4.3, "cal": 49, "price": 8.5, "type": "leafy"},
+    
+    # --- 十字花科与根茎类 ---
+    "Broccoli (西兰花)": {"p": 2.8, "cal": 34, "price": 1.5, "type": "cruciferous"},
+    "Okra (羊角豆)": {"p": 1.9, "cal": 33, "price": 1.0, "type": "fiber"},
+    "Cabbage (包菜)": {"p": 1.3, "cal": 25, "price": 0.3, "type": "fiber"},
+    "Purple Cabbage (紫甘蓝)": {"p": 1.4, "cal": 31, "price": 1.2, "type": "antioxidant"}
     },
     "Sauces": {
         "Sambal (No Sugar)": {"p": 0.5, "cal": 20, "price": 0.2},
@@ -91,30 +109,61 @@ tdee = bmr * activity_factors[activity]
 
 if user_goal == "减脂 (Cut)":
     target_cal = tdee - 500
-    target_p = weight * 2.0  
+    target_p = weight * 1.6 
+    target_f = weight * 0.7  # 修正：设定脂肪底线，防止“变太监”
 elif user_goal == "增肌 (Bulk)":
     target_cal = tdee + 300
-    target_p = weight * 2.2
+    target_p = weight * 1.8
+    target_f = weight * 0.8
 else:
     target_cal = tdee
-    target_p = weight * 1.6
+    target_p = weight * 1.2
+    target_f = weight * 0.8
+
+# --- 侧边栏视觉与逻辑增强 ---
+st.sidebar.divider()
+st.sidebar.subheader("🎯 每日营养目标")
+
+# 使用列布局，让数据更紧凑
+col_t1, col_t2 = st.sidebar.columns(2)
+col_t1.metric("⚖️ 维持热量 (TDEE)", f"{int(tdee)}")
+col_t2.metric("🔥 目标热量", f"{int(target_cal)}", delta=f"{int(target_cal - tdee)} kcal", delta_color="inverse")
+
+# 完整显示三大营养素
+st.sidebar.markdown(f"""
+| 营养素 | 目标摄入量 | 备注 |
+| :--- | :--- | :--- |
+| 🥩 **蛋白质** | {int(target_p)}g | 维持肌肉，防止代谢下降 |
+| 🥑 **优质脂肪** | {int(target_f)}g | **保护激素，防止出家** |
+| 🍚 **净碳水** | {int((target_cal - target_p*4 - target_f*9)/4)}g | 训练/交易大脑供能 |
+""")
 
 st.sidebar.divider()
-st.sidebar.metric("🔥 建议每日热量", f"{int(target_cal)} kcal")
-st.sidebar.metric("🥩 建议每日蛋白", f"{int(target_p)} g")
-bmi_status = "正常" if 18.5 <= bmi < 24 else "超重" if bmi >= 24 else "偏瘦"
-st.sidebar.info(f"当前 BMI: {bmi:.1f} ({bmi_status})")
+
+# BMI 状态增强版
+if bmi >= 24:
+    st.sidebar.warning(f"⚠️ 当前 BMI: {bmi:.1f} (超重) \n\n 离 70kg 目标还需减掉 {int(weight - 70)}kg！")
+elif 18.5 <= bmi < 24:
+    st.sidebar.success(f"✅ 当前 BMI: {bmi:.1f} (正常)")
+else:
+    st.sidebar.error(f"🚨 当前 BMI: {bmi:.1f} (偏瘦)")
+
+# 增加一个简单的进度条：80kg -> 70kg
+progress = max(0, min(100, int((80 - weight) / (80 - 70) * 100)))
+st.sidebar.write(f"🏃‍♂️ 减脂总进度: {progress}%")
+st.sidebar.progress(progress / 100)
 
 # --- 辅助计算函数 (保留你的逻辑) ---
-def calc_meal(p_n, p_g, c_n, c_g, v_list, s_n):
-    rp, rc, rs = db["Protein"][p_n], db["Carbs"][c_n], db["Sauces"][s_n]
-    tp = (rp['p']*p_g/100) + (rc['p']*c_g/100) + rs['p']
-    tc = (rp['cal']*p_g/100) + (rc['cal']*c_g/100) + rs['cal']
+def calc_meal(p_n, p_g, c_n, c_g, v_list, s_n, f_n):
+    rp, rc, rs, rf = db["Protein"][p_n], db["Carbs"][c_n], db["Sauces"][s_n], db["Healthy Fats"][f_n]
+    tp = (rp['p']*p_g/100) + (rc['p']*c_g/100) + rs.get('p', 0) + rf.get('p', 0)
+    tf = (rp.get('f', 0)*p_g/100) + rs.get('f', 0) + rf.get('f', 0)
+    tc = (rp['cal']*p_g/100) + (rc['cal']*c_g/100) + rs['cal'] + rf['cal']
     for v in v_list:
         vs = db["Veggies"][v]
-        tp += vs['p'] if 'p' in vs else 0
+        tp += vs.get('p', 0)
         tc += vs['cal']
-    return tp, tc
+    return tp, tf, tc
 
 # --- 主界面 ---
 st.title("🔥 MySukuSuku Master: 全方位科学备餐系统")
@@ -124,17 +173,23 @@ tab1, tab2, tab3 = st.tabs(["🏗️ 每日自由组装", "📅 5天自动计划
 
 with tab1:
     st.subheader("🍳 早、午、晚三餐配置")
-    bf_c = st.selectbox("☀️ 选择快速早餐", list(db["Breakfast"].keys()))
+    bf_c = st.selectbox("☀️ 早餐选择", list(db["Breakfast"].keys()))
     col_l, col_r = st.columns(2)
+    
     with col_l:
         st.markdown("### 🍱 午餐设定")
-        lp = st.selectbox("选择蛋白质", list(db["Protein"].keys()), key="lp")
-        lpg = st.slider("蛋白质克数", 50, 400, 150, 10, key="lpg")
-        lc = st.selectbox("选择碳水", list(db["Carbs"].keys()), key="lc")
-        lcg = st.slider("碳水克数", 0, 350, 150, 10, key="lcg")
-        lv = st.multiselect("添加蔬菜", list(db["Veggies"].keys()), default=["Broccoli (西兰花)"], key="lv")
-        ls = st.selectbox("调味酱料", list(db["Sauces"].keys()), key="ls")
-        lp_p, lp_cal = calc_meal(lp, lpg, lc, lcg, lv, ls)
+        lp = st.selectbox("蛋白质", list(db["Protein"].keys()), key="lp")
+        lpg = st.slider("生重 (g)", 50, 400, 150, 10, key="lpg")
+        lc = st.selectbox("碳水", list(db["Carbs"].keys()), key="lc")
+        lcg = st.slider("克数 (g)", 0, 350, 150, 10, key="lcg")
+        
+        # 蔬菜选择 + 脑雾逻辑预警
+        lv = st.multiselect("蔬菜 (建议包含深色叶菜)", list(db["Veggies"].keys()), default=["Choy Sum (菜心-本地推荐)"], key="lv")
+        if not any(db["Veggies"][v].get("type") == "leafy" for v in lv):
+            st.warning("⚠️ **脑雾预警**：检测到缺少深色叶菜！这会导致镁/钾不足，影响交易效率。")
+            
+        ls, lf = st.selectbox("酱料", list(db["Sauces"].keys()), key="ls"), st.selectbox("优质脂肪 (必选)", list(db["Healthy Fats"].keys()), key="lf")
+        lp_p, lp_f, lp_cal = calc_meal(lp, lpg, lc, lcg, lv, ls, lf)
     with col_r:
         st.markdown("### 🍽️ 晚餐设定")
         dp = st.selectbox("选择蛋白质", list(db["Protein"].keys()), key="dp")
@@ -157,33 +212,83 @@ with tab1:
             st.warning("⚠️ 摄入超标，建议减少主食分量。")
 
 with tab2:
-    st.subheader("📅 工作日 5 天详细计划")
-    if st.button("🪄 一键生成动态 5 天方案"):
-        shopping = {}
-        # 内部逻辑完全保留你的随机选择和采购量计算
-        for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]:
-            p_n = random.choice(list(db["Protein"].keys()))
-            c_n = random.choice(list(db["Carbs"].keys()))
-            v_s = random.sample(list(db["Veggies"].keys()), 2)
-            raw = 300 * db["Protein"][p_n].get("raw_ratio", 1.2)
-            shopping[p_n] = shopping.get(p_n, 0) + raw
-            with st.expander(f"📍 {day} 安排", expanded=True):
-                ca, cb, cc = st.columns(3)
-                ca.success(f"**🌅 早餐**\n\n{random.choice(list(db['Breakfast'].keys()))}")
-                cb.info(f"**🍱 午餐**\n\n150g {p_n}\n\n150g {c_n}")
-                cc.warning(f"**🍽️ 晚餐**\n\n150g {p_n}\n\n🥗 {v_s[1]}")
-        st.divider()
-        st.subheader("🛒 本周采购建议 (总重)")
-        shop_cols = st.columns(len(shopping))
-        wa_text = "🛒 我的减脂采购清单:\n\n"
-        for i, (item, weight_g) in enumerate(shopping.items()):
-             shop_cols[i].metric(item, f"{weight_g/1000:.2f} kg")
-             wa_text += f"- {item}: {weight_g/1000:.2f} kg\n"
-        # 新增的 WhatsApp 导出按钮
-        encoded_wa = urllib.parse.quote(wa_text)
-        st.markdown(f'<div style="text-align: center;"><a href="https://wa.me/?text={encoded_wa}" target="_blank" class="whatsapp-button">📲 发送清单到 WhatsApp</a></div>', unsafe_allow_html=True)
+    st.subheader("📅 工作日 5 天高效备餐计划 (拒接零碎采购)")
+    
+    # 1. 选择器：先定基调，再生成计划
+    col_opt1, col_opt2 = st.columns(2)
+    with col_opt1:
+        # 默认选中鸡胸和甘榜鱼，符合大马 Pasar 采购习惯
+        main_protein = st.multiselect(
+            "核心蛋白质 (建议选2种)", 
+            list(db["Protein"].keys()), 
+            default=["Chicken Breast (鸡胸)", "Ikan Kembung (甘榜鱼)"]
+        )
+    with col_opt2:
+        main_carb = st.selectbox("核心碳水 (建议选1种)", list(db["Carbs"].keys()), index=0)
 
-with tab3:
+    # 2. 逻辑执行按钮
+    if st.button("🪄 生成本周高效采购清单 & 计划"):
+        if not main_protein:
+            st.error("请至少选择一种蛋白质，否则你只能吃草了。")
+        else:
+            shopping = {}
+            st.write("### 🗓️ 5天重复循环方案 (降低烹饪复杂度)")
+            
+            # 3. 循环生成 5 天安排
+            days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            for i, day in enumerate(days):
+                # 核心修改：通过取余 % 实现蛋白质交替，避免每天买不同肉
+                p_n = main_protein[i % len(main_protein)]
+                c_n = main_carb
+                # 随机选2种蔬菜增加多样性
+                v_s = random.sample(list(db["Veggies"].keys()), 2)
+                
+                # 计算生重并累加到采购清单
+                # 300g 熟重对应的生重 = 300 * raw_ratio
+                raw_p = 300 * db["Protein"][p_n].get("raw_ratio", 1.2)
+                shopping[p_n] = shopping.get(p_n, 0) + raw_p
+                
+                # 碳水同样考虑缩水/吸水率
+                raw_c = 200 * 1.1 
+                shopping[c_n] = shopping.get(c_n, 0) + raw_c
+
+                # 界面展示
+                with st.expander(f"📍 {day} 安排", expanded=(i==0)):
+                    ca, cb, cc = st.columns(3)
+                    # 早餐固定为数据库第一项，减少思考成本
+                    ca.success(f"**🌅 早餐**\n\n{list(db['Breakfast'].keys())[0]}") 
+                    cb.info(f"**🍱 午餐**\n\n150g {p_n}\n\n150g {c_n}\n\n🥗 {v_s[0]}")
+                    cc.warning(f"**🍽️ 晚餐**\n\n150g {p_n}\n\n🥗 {v_s[1]}\n\n(低碳模式)")
+
+            st.divider()
+            st.subheader("🛒 本周 Pasar 采购建议 (已自动取整)")
+            
+            # 4. 采购量取整逻辑 (0.5kg 为单位)
+            shop_cols = st.columns(len(shopping))
+            wa_text = "🛒 我的高效减脂采购清单 (Johor Market 版):\n\n"
+            
+            for i, (item, weight_g) in enumerate(shopping.items()):
+                # 核心逻辑：向上取整到最接近的 0.5kg，方便 Pasar 大叔切肉
+                rounded_weight = math.ceil(weight_g / 500) * 0.5
+                shop_cols[i].metric(
+                    item, 
+                    f"{rounded_weight:.2f} kg", 
+                    help="已根据缩水率计算生重，并向上取整至 0.5kg"
+                )
+                wa_text += f"- {item}: 约 {rounded_weight:.2f} kg\n"
+            
+            # 5. WhatsApp 导出功能
+            encoded_wa = urllib.parse.quote(wa_text)
+            st.markdown(
+                f'''
+                <div style="text-align: center;">
+                    <a href="https://wa.me/?text={encoded_wa}" target="_blank" class="whatsapp-button">
+                        📲 发送清单到 WhatsApp
+                    </a>
+                </div>
+                ''', 
+                unsafe_allow_html=True
+            )
     st.subheader("🍳 备餐科学流程 (0 经验/无空气炸锅版)")
     col_a, col_b = st.columns(2)
     with col_a:
