@@ -1,1 +1,15 @@
+[theme]
+# 主色调 (如按钮颜色、滑块颜色)，改成了更激进的橘红色
+primaryColor = "#FF4B4B"
 
+# 页面背景色，改成了极浅的灰白色，更有 App 的感觉
+backgroundColor = "#F7F9FC"
+
+# 侧边栏和卡片的背景色，纯白色
+secondaryBackgroundColor = "#FFFFFF"
+
+# 字体颜色
+textColor = "#1E293B"
+
+# 字体，使用无衬线现代字体
+font = "sans serif"
