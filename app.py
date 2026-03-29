@@ -320,3 +320,65 @@ with tab3:
         """)
 
     st.success("💡 **专业建议**: 备餐时建议一次性处理 3 天的肉类生重，分袋装好，吃的时候现煎只需 5 分钟，口感远超微波炉加热。")
+
+with tab4:
+    st.divider()
+    st.markdown("### 🚫 柔佛减脂防雷图鉴 (Johor Food Avoid List)")
+    st.caption("作为金融交易员，保持血糖稳定至关重要。以下食物会导致血糖飙升，引发交易时的“脑雾”。")
+
+    # 定义防雷卡片样式
+    st.markdown("""
+        <style>
+        .avoid-card {
+            background-color: #fff5f5;
+            border-left: 5px solid #ff4b4b;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            height: 180px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        }
+        .avoid-title { color: #d32f2f; font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
+        .avoid-desc { color: #666; font-size: 0.9em; }
+        .avoid-cal { color: #ff4b4b; font-weight: bold; font-size: 0.85em; margin-top: 10px; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 第一行防雷食物
+    r1_col1, r1_col2, r1_col3, r1_col4 = st.columns(4)
+    
+    with r1_col1:
+        st.markdown("""<div class="avoid-card">
+            <div class="avoid-title">🥤 Gula Melaka Drinks</div>
+            <div class="avoid-desc">糖分炸弹，直接摧毁代谢。</div>
+            <div class="avoid-cal">🔥 ~250 kcal/杯</div>
+        </div>""", unsafe_allow_html=True)
+
+    with r1_col2:
+        st.markdown("""<div class="avoid-card">
+            <div class="avoid-title">🍛 Nasi Lemak</div>
+            <div class="avoid-desc">油脂与精制碳水的双重打击。</div>
+            <div class="avoid-cal">🔥 ~800+ kcal/份</div>
+        </div>""", unsafe_allow_html=True)
+
+    with r1_col3:
+        st.markdown("""<div class="avoid-card">
+            <div class="avoid-title">🥮 Kuih-Muih</div>
+            <div class="avoid-desc">体积虽小，隐形热量极高。</div>
+            <div class="avoid-cal">🔥 ~150 kcal/块</div>
+        </div>""", unsafe_allow_html=True)
+
+    with r1_col4:
+        st.markdown("""<div class="avoid-card">
+            <div class="avoid-title">🍜 Maggie Mee</div>
+            <div class="avoid-desc">钠含量超标，导致身体水肿。</div>
+            <div class="avoid-cal">🔥 ~450 kcal/包</div>
+        </div>""", unsafe_allow_html=True)
+
+    # 增加专业建议
+    st.warning("""
+    **💡 专业建议：**
+    * **远离加工糖**: 所有的糖水、珍珠奶茶都会让你的 70kg 目标变得遥遥无期。
+    * **控制辣酱陷阱**: 很多 Sambal 酱为了中和辣度加入了大量的油和糖。
+    * **交易脑雾?**: 感觉脑子转不动时，选坚果，别选糖果！
+    """)
