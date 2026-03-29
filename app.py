@@ -3,9 +3,9 @@ import pandas as pd
 import random
 
 # 1. 网页全局配置
-st.set_page_config(page_title="MySukuSuku Master Ultra", page_icon="🇲🇾", layout="wide")
+st.set_page_config(page_title="MySukuSuku Master Ultra", page_icon="🧬", layout="wide")
 
-# 2. 核心数据库 (保持不变)
+# 2. 核心数据库 (每 100g 营养数据)
 db = {
     "Breakfast": {
         "2只大号水煮蛋 (Telur Rebus)": {"p": 13, "c": 1, "cal": 155, "price": 1.2},
@@ -40,115 +40,128 @@ db = {
     }
 }
 
-# --- 辅助计算函数 (保持不变) ---
+# --- 科学计算逻辑：TDEE & BMI ---
+st.sidebar.title("🧬 科学营养分析")
+with st.sidebar.expander("输入身体指标 (必填)", expanded=True):
+    weight = st.number_input("当前体重 (kg)", 40.0, 150.0, 75.0)
+    height = st.number_input("当前身高 (cm)", 120.0, 220.0, 175.0)
+    age = st.number_input("当前年龄", 15, 85, 25)
+    gender = st.selectbox("性别", ["男", "女"])
+    activity = st.selectbox("活动水平", [
+        "久坐 (办公室/交易员)", 
+        "轻度活动 (每周运动1-2天)", 
+        "中度活动 (每周运动3-5天)", 
+        "高度活动 (每天高强度运动)"
+    ])
+    user_goal = st.selectbox("核心目标", ["维持体重", "减脂 (Cut)", "增肌 (Bulk)"])
+
+# 计算 BMI
+bmi = weight / ((height/100)**2)
+
+# 计算 BMR (Mifflin-St Jeor)
+if gender == "男":
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5
+else:
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161
+
+# TDEE 计算
+activity_factors = {"久坐 (办公室/交易员)": 1.2, "轻度活动 (每周运动1-2天)": 1.375, "中度活动 (每周运动3-5天)": 1.55, "高度活动 (每天高强度运动)": 1.725}
+tdee = bmr * activity_factors[activity]
+
+# 根据目标科学分配热量与蛋白
+if user_goal == "减脂 (Cut)":
+    target_cal = tdee - 500
+    target_p = weight * 2.0  # 减脂期高蛋白防掉肌肉
+elif user_goal == "增肌 (Bulk)":
+    target_cal = tdee + 300
+    target_p = weight * 2.2
+else:
+    target_cal = tdee
+    target_p = weight * 1.6
+
+st.sidebar.divider()
+st.sidebar.metric("建议每日热量", f"{int(target_cal)} kcal")
+st.sidebar.metric("建议每日蛋白", f"{int(target_p)} g")
+st.sidebar.write(f"当前 BMI: {bmi:.1f}")
+
+# --- 辅助计算函数 ---
 def calc_meal(p_n, p_g, c_n, c_g, v_list, s_n):
-    res_p = db["Protein"][p_n]
-    res_c = db["Carbs"][c_n]
-    res_s = db["Sauces"][s_n]
-    total_p = (res_p['p'] * p_g / 100) + (res_c['p'] * c_g / 100) + res_s['p']
-    total_cal = (res_p['cal'] * p_g / 100) + (res_c['cal'] * c_g / 100) + res_s['cal']
-    total_cost = (res_p['price'] * p_g / 100) + (res_c['price'] * c_g / 100) + res_s['price']
+    rp, rc, rs = db["Protein"][p_n], db["Carbs"][c_n], db["Sauces"][s_n]
+    tp = (rp['p']*p_g/100) + (rc['p']*c_g/100) + rs['p']
+    tc = (rp['cal']*p_g/100) + (rc['cal']*c_g/100) + rs['cal']
     for v in v_list:
-        v_s = db["Veggies"][v]
-        total_p += v_s['p']
-        total_cal += v_s['cal']
-        total_cost += v_s['price']
-    return total_p, total_cal, total_cost
+        vs = db["Veggies"][v]
+        tp += vs['p']; tc += vs['cal']
+    return tp, tc
 
 # --- 主界面 ---
-st.sidebar.title("🎯 目标与设置")
-daily_p_goal = st.sidebar.number_input("每日蛋白质目标 (g)", 50, 250, 150)
-show_price = st.sidebar.checkbox("开启 RM 成本估算", value=True)
+st.title("🔥 MySukuSuku Master: 全方位科学备餐系统")
+st.info(f"📍 目标状态：{user_goal} | BMI：{bmi:.1f} | 建议总摄入：{int(target_cal)} kcal")
 
-st.title("🔥 MySukuSuku Master: 全天候备餐系统")
-st.markdown("---")
-
-tab1, tab2, tab3 = st.tabs(["🏗️ 每日自由组装", "📅 智能 5 天计划", "👨‍🍳 烹饪备忘录"])
+tab1, tab2, tab3 = st.tabs(["🏗️ 每日自由组装", "📅 5天自动计划", "👨‍🍳 烹饪备忘录"])
 
 with tab1:
-    # (这部分代码保持你原本的逻辑完全不变)
-    st.subheader("🍳 早餐 (Breakfast)")
-    bf_choice = st.selectbox("选择快速早餐", list(db["Breakfast"].keys()))
-    bf_data = db["Breakfast"][bf_choice]
-    st.markdown("---")
-    col_l, col_d = st.columns(2)
+    st.subheader("🍳 早、午、晚三餐配置")
+    bf_c = st.selectbox("选择快速早餐", list(db["Breakfast"].keys()))
+    
+    col_l, col_r = st.columns(2)
     with col_l:
-        st.subheader("🍱 午餐 (Lunch)")
+        st.write("**🍱 午餐设定**")
         lp = st.selectbox("蛋白质", list(db["Protein"].keys()), key="lp")
-        lpg = st.slider("重量(g)", 50, 300, 150, 10, key="lpg")
+        lpg = st.slider("克数", 50, 350, 150, 10, key="lpg")
         lc = st.selectbox("碳水", list(db["Carbs"].keys()), key="lc")
-        lcg = st.slider("重量(g)", 50, 300, 100, 10, key="lcg")
-        lv = st.multiselect("蔬菜模块", list(db["Veggies"].keys()), default=["Broccoli (西兰花)"], key="lv")
+        lcg = st.slider("克数", 50, 350, 100, 10, key="lcg")
+        lv = st.multiselect("蔬菜", list(db["Veggies"].keys()), default=["Broccoli (西兰花)"], key="lv")
         ls = st.selectbox("酱料", list(db["Sauces"].keys()), key="ls")
-        lp_p, lp_cal, lp_cost = calc_meal(lp, lpg, lc, lcg, lv, ls)
-    with col_d:
-        st.subheader("🍽️ 晚餐 (Dinner)")
+        lp_p, lp_cal = calc_meal(lp, lpg, lc, lcg, lv, ls)
+
+    with col_r:
+        st.write("**🍽️ 晚餐设定**")
         dp = st.selectbox("蛋白质", list(db["Protein"].keys()), key="dp")
-        dpg = st.slider("重量(g)", 50, 300, 150, 10, key="dpg")
+        dpg = st.slider("克数", 50, 350, 150, 10, key="dpg")
         dc = st.selectbox("碳水", list(db["Carbs"].keys()), key="dc")
-        dcg = st.slider("重量(g)", 50, 300, 50, 10, key="dcg")
-        dv = st.multiselect("蔬菜模块", list(db["Veggies"].keys()), default=["Okra (羊角豆)"], key="dv")
+        dcg = st.slider("克数", 50, 350, 50, 10, key="dcg")
+        dv = st.multiselect("蔬菜", list(db["Veggies"].keys()), default=["Okra (羊角豆)"], key="dv")
         ds = st.selectbox("酱料", list(db["Sauces"].keys()), key="ds")
-        dp_p, dp_cal, dp_cost = calc_meal(dp, dpg, dc, dcg, dv, ds)
+        dp_p, dp_cal = calc_meal(dp, dpg, dc, dcg, dv, ds)
+
+    # 全天汇总分析
     st.divider()
-    all_p = bf_data['p'] + lp_p + dp_p
-    all_cal = bf_data['cal'] + lp_cal + dp_cal
-    all_cost = bf_data['price'] + lp_cost + dp_cost
-    c1, c2, c3 = st.columns(3)
-    c1.metric("全天总热量", f"{int(all_cal)} kcal")
-    c2.metric("全天蛋白质", f"{int(all_p)} g / {daily_p_goal}g")
-    if show_price: c3.metric("全天预估成本", f"RM {all_cost:.2f}")
-    st.progress(min(all_p / daily_p_goal, 1.0))
-    st.caption(f"🔥 今日蛋白质目标已完成 {int(all_p/daily_p_goal*100)}%")
+    day_p = db["Breakfast"][bf_c]['p'] + lp_p + dp_p
+    day_cal = db["Breakfast"][bf_c]['cal'] + lp_cal + dp_cal
+    
+    m1, m2, m3 = st.columns(3)
+    m1.metric("今日总热量", f"{int(day_cal)} kcal", delta=f"{int(day_cal - target_cal)} vs 建议")
+    m2.metric("今日总蛋白", f"{int(day_p)} g", delta=f"{int(day_p - target_p)} vs 建议")
+    m3.write(f"蛋白达标率: {int(day_p/target_p*100)}%")
+    m3.progress(min(day_p / target_p, 1.0))
 
 with tab2:
-    st.subheader("📅 工作日 5 天全功能方案")
-    
-    # 设定生成逻辑
-    if st.button("🪄 一键生成智能备餐清单"):
-        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-        shopping_list = {} # 存储需要购买的总生重
-        
-        # 布局：左侧显示排餐卡片，右侧显示购物清单
-        col_plan, col_shop = st.columns([3, 1])
-        
-        with col_plan:
-            for day in days:
-                p_item = random.choice(list(db["Protein"].keys()))
-                c_item = random.choice(list(db["Carbs"].keys()))
-                v_selected = random.sample(list(db["Veggies"].keys()), 2)
-                
-                # 记录采购需求 (假设午餐晚餐各吃 150g 熟重)
-                raw_weight_needed = (150 * 2) * db["Protein"][p_item].get("raw_ratio", 1.2)
-                shopping_list[p_item] = shopping_list.get(p_item, 0) + raw_weight_needed
-                
-                with st.expander(f"📍 {day} 饮食安排", expanded=True):
-                    c_a, c_b, c_c = st.columns(3)
-                    c_a.markdown(f"**🍳 早餐**\n\n{random.choice(list(db['Breakfast'].keys()))}")
-                    c_b.markdown(f"**🍱 午餐**\n\n150g {p_item}\n\n100g {c_item}\n\n🥗 {v_selected[0]}")
-                    c_c.markdown(f"**🍽️ 晚餐**\n\n150g {p_item}\n\n🥗 {v_selected[1]}\n\n(建议低碳水)")
-        
-        with col_shop:
-            st.info("🛒 周末采购清单 (生重)")
-            for item, weight in shopping_list.items():
-                st.write(f"- **{item}**: {weight/1000:.2f} kg")
-            st.divider()
-            st.write("🥦 **蔬菜建议**:")
-            st.write("- 西兰花/包菜/羊角豆 各买 1-2 份")
-            st.write("- 鸡蛋 1 盒 (10颗)")
-            st.caption("注：分量基于每天两顿 150g 蛋白质熟重估算。")
+    st.subheader("📅 工作日 5 天详细计划 (不单调版)")
+    if st.button("🪄 生成动态 5 天方案"):
+        plan_list = []
+        shopping = {}
+        for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]:
+            p_n = random.choice(list(db["Protein"].keys()))
+            c_n = random.choice(list(db["Carbs"].keys()))
+            v_s = random.sample(list(db["Veggies"].keys()), 2)
+            
+            # 记录采购：假设每天两顿 150g 熟肉
+            raw = 300 * db["Protein"][p_n].get("raw_ratio", 1.2)
+            shopping[p_n] = shopping.get(p_n, 0) + raw
+            
+            with st.expander(f"📍 {day} 安排", expanded=True):
+                ca, cb, cc = st.columns(3)
+                ca.write(f"**🌅 早餐**\n\n{random.choice(list(db['Breakfast'].keys()))}")
+                cb.write(f"**🍱 午餐**\n\n150g {p_n} + 100g {c_n}\n\n🥗 {v_s[0]}")
+                cc.write(f"**🍽️ 晚餐**\n\n150g {p_n} + 🥗 {v_s[1]}\n\n(建议低碳)")
+
+        st.info(f"🛒 **本周采购建议 (总生重)**: " + ", ".join([f"{k}: {v/1000:.2f}kg" for k, v in shopping.items()]))
 
 with tab3:
-    # (这部分代码保持不变)
-    st.subheader("🍳 90 分钟模块化备餐流程")
+    st.subheader("🍳 备餐科学流程指南")
     st.markdown("""
-    1. **烤箱预热 220°C**：
-        - 放置鸡胸、鱼柳、虾仁。**20 分钟**出炉。
-        - 放置切块红薯、南瓜、土豆。**25 分钟**出炉。
-    2. **大锅烧开水**：
-        - 烫西兰花/羊角豆（**1 分钟**）。
-        - 烫胡萝卜/包菜（**2 分钟**）。
-    3. **储存秘籍**：
-        - 蔬菜晾干后，在保鲜盒底部垫**厨房纸**吸收多余水分。
-        - 酱料独立小盒装，吃之前再淋上去。
+    - **1. 批量烘烤 (Bulk Roast)**：肉类/红薯入烤箱 220°C，20-25 分钟。
+    - **2. 极速杀青 (Blanching)**：西兰花烫 60s，捞起必须晾干。
+    - **3. 存储技术**：盒子底部垫厨房纸。
     """)
