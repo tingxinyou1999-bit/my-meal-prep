@@ -168,7 +168,8 @@ def calc_meal(p_n, p_g, c_n, c_g, v_list, s_n, f_n):
 st.title("🔥 MySukuSuku Master: 全方位科学备餐系统")
 st.info(f"📍 目标状态：{user_goal} | 建议摄入：{int(target_cal)} kcal | 地区建议：Johor/Local Market")
 
-tab1, tab2, tab3 = st.tabs(["🏗️ 每日自由组装", "📅 5天自动计划", "👨‍🍳 烹饪备忘录"])
+# 将原来的 3 改成 4，并增加一个标题
+tab1, tab2, tab3, tab4 = st.tabs(["🏗️ 自由组装", "📅 5天计划", "👨‍🍳 烹饪备忘录", "🚫 避雷图鉴"])
 
 with tab1:
     st.subheader("🍳 早、午、晚三餐配置")
