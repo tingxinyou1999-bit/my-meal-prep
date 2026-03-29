@@ -196,8 +196,9 @@ with tab1:
         dc = st.selectbox("选择碳水", list(db["Carbs"].keys()), key="dc")
         dcg = st.slider("碳水克数", 0, 350, 50, 10, key="dcg")
         dv = st.multiselect("添加蔬菜", list(db["Veggies"].keys()), default=["Okra (羊角豆)"], key="dv")
+        df = st.selectbox("选择优质脂肪 (晚餐)", list(db["Healthy Fats"].keys()), key="df")
         ds = st.selectbox("调味酱料", list(db["Sauces"].keys()), key="ds")
-        dp_p, dp_cal = calc_meal(dp, dpg, dc, dcg, dv, ds)
+        dp_p, dp_f, dp_cal = calc_meal(dp, dpg, dc, dcg, dv, ds)
     st.divider()
     day_p = db["Breakfast"][bf_c]['p'] + lp_p + dp_p
     day_cal = db["Breakfast"][bf_c]['cal'] + lp_cal + dp_cal
