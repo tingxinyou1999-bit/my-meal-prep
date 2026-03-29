@@ -1,89 +1,86 @@
 import streamlit as st
+import pandas as pd
 
-# --- 页面配置 ---
-st.set_page_config(page_title="MySukuSuku Pro", page_icon="🍱", layout="centered")
+# 1. 页面配置与美化
+st.set_page_config(page_title="MySukuSuku Ultra", page_icon="🇲🇾", layout="wide")
 
-# --- 核心数据库 (每 100g 营养成分) ---
-# p:蛋白质, c:碳水, f:脂肪, cal:卡路里
-data = {
-    "蛋白质 (Proteins)": {
-        "烤鸡胸肉 (Ayam Dada)": {"p": 31, "c": 0, "f": 3.6, "cal": 165},
-        "甘榜鱼 (Ikan Kembung)": {"p": 19, "c": 0, "f": 5, "cal": 125},
-        "三文鱼 (Salmon)": {"p": 20, "c": 0, "f": 13, "cal": 208},
-        "蒜香虾仁 (Udang)": {"p": 24, "c": 0.2, "f": 0.3, "cal": 99},
-        "水煮蛋 (2颗/100g)": {"p": 13, "c": 1.1, "f": 11, "cal": 155},
-        "瘦牛肉 (Beef Lean)": {"p": 26, "c": 0, "f": 15, "cal": 250}
+# 2. 增强版数据库 (加了脂肪 f 和详细营养)
+ingredients = {
+    "Protein (肉类/蛋白质)": {
+        "Chicken Breast (鸡胸)": {"p": 31, "c": 0, "f": 3.6, "cal": 165},
+        "Ikan Kembung (甘榜鱼)": {"p": 19, "c": 0, "f": 5, "cal": 125},
+        "Salmon (三文鱼)": {"p": 20, "c": 0, "f": 13, "cal": 208},
+        "Frozen Prawns (虾仁)": {"p": 24, "c": 0.2, "f": 0.3, "cal": 99},
+        "Hard Boiled Eggs (鸡蛋/2只)": {"p": 13, "c": 1.1, "f": 11, "cal": 155}
     },
-    "碳水 (Carbs)": {
-        "糙米饭 (Brown Rice)": {"p": 2.6, "c": 23, "f": 0.9, "cal": 111},
-        "红薯 (Ubi Keledek)": {"p": 1.6, "c": 20, "f": 0.1, "cal": 86},
-        "马铃薯 (Potato)": {"p": 2, "c": 17, "f": 0.1, "cal": 77},
-        "烤南瓜 (Labu)": {"p": 1, "c": 6.5, "f": 0.1, "cal": 26},
-        "全麦意粉 (Pasta)": {"p": 5, "c": 25, "f": 1.1, "cal": 124}
+    "Carbs (碳水/主食)": {
+        "Brown Rice (糙米)": {"p": 2.6, "c": 23, "f": 0.9, "cal": 111},
+        "Sweet Potato (红薯)": {"p": 1.6, "c": 20, "f": 0.1, "cal": 86},
+        "Roasted Pumpkin (南瓜)": {"p": 1, "c": 6.5, "f": 0.1, "cal": 26},
+        "Baby Potatoes (小土豆)": {"p": 2, "c": 17, "f": 0.1, "cal": 77}
     },
-    "蔬菜 (Veggies)": {
-        "西兰花 (Broccoli)": {"p": 2.8, "c": 7, "f": 0.4, "cal": 34},
-        "羊角豆 (Okra)": {"p": 1.9, "c": 7, "f": 0.2, "cal": 33},
-        "胡萝卜 (Carrot)": {"p": 0.9, "c": 10, "f": 0.2, "cal": 41},
-        "包菜 (Cabbage)": {"p": 1.3, "c": 6, "f": 0.1, "cal": 25}
-    },
-    "灵魂酱料 (Sauces)": {
-        "无糖 Sambal (15g)": {"p": 0.5, "c": 2, "f": 1, "cal": 20},
-        "日式照烧汁 (15g)": {"p": 0.5, "c": 5, "f": 0, "cal": 25},
-        "黑胡椒汁 (15g)": {"p": 0.2, "c": 3, "f": 1, "cal": 22},
-        "泰式酸辣酱 (15g)": {"p": 0.1, "c": 6, "f": 0, "cal": 25},
-        "纯牛油果酱 (30g)": {"p": 0.6, "c": 2.6, "f": 4.5, "cal": 50},
-        "不加酱 (Dry)": {"p": 0, "c": 0, "f": 0, "cal": 0}
+    "Sauces (灵魂酱料)": {
+        "Sambal (No Sugar)": {"p": 0.5, "c": 2, "cal": 20},
+        "Teriyaki Sauce": {"p": 0.5, "c": 5, "cal": 25},
+        "Thai Chili": {"p": 0.1, "c": 6, "cal": 25},
+        "Black Pepper": {"p": 0.2, "c": 3, "cal": 22}
     }
 }
 
-st.title("🍱 马来西亚模块化备餐计算器")
-st.write("根据视频概念：手动组合模块，自动计算卡路里。")
+# --- 侧边栏：目标设定 ---
+st.sidebar.header("🎯 我的营养目标")
+daily_protein_target = st.sidebar.number_input("每日蛋白质目标 (g)", 50, 250, 150)
 
-# --- 交互区域 ---
-# 1. 蛋白质
-st.subheader("🥩 第一步：选择蛋白质")
-p_name = st.selectbox("肉类选择", list(data["蛋白质 (Proteins)"].keys()))
-p_gram = st.slider(f"{p_name} 的重量 (g)", 50, 300, 150, 10)
+# --- 主界面 ---
+st.title("🔥 MySukuSuku Ultra: 马来西亚备餐大师")
+st.markdown("---")
 
-# 2. 碳水
-st.subheader("🍚 第二步：选择碳水")
-c_name = st.selectbox("主食选择", list(data["碳水 (Carbs)"].keys()))
-c_gram = st.slider(f"{c_name} 的重量 (g)", 50, 300, 100, 10)
+tab1, tab2 = st.tabs(["🏗️ 自由组装模块", "📅 自动生成5天计划"])
 
-# 3. 蔬菜 (默认每份100g)
-st.subheader("🥦 第三步：选择蔬菜")
-v_names = st.multiselect("选择蔬菜 (每种固定100g计算)", list(data["蔬菜 (Veggies)"].keys()), default=["西兰花 (Broccoli)"])
+with tab1:
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        p_name = st.selectbox("🥩 蛋白质模块", list(ingredients["Protein (肉类/蛋白质)"].keys()))
+        p_g = st.slider("重量 (克)", 50, 300, 150, step=10, key="p1")
+        
+        c_name = st.selectbox("🍚 碳水模块", list(ingredients["Carbs (碳水/主食)"].keys()))
+        c_g = st.slider("重量 (克)", 50, 300, 100, step=10, key="c1")
+        
+        s_name = st.radio("🌶️ 酱料选择", list(ingredients["Sauces (灵魂酱料)"].keys()), horizontal=True)
 
-# 4. 酱料
-st.subheader("🌶️ 第四步：选择酱料")
-s_name = st.radio("今日灵魂酱料", list(data["灵魂酱料 (Sauces)"].keys()), horizontal=True)
+    with col2:
+        st.subheader("📊 实时营养分析")
+        # 计算逻辑
+        p_stats = ingredients["Protein (肉类/蛋白质)"][p_name]
+        c_stats = ingredients["Carbs (碳水/主食)"][c_name]
+        s_stats = ingredients["Sauces (灵魂酱料)"][s_name]
+        
+        total_p = (p_stats['p'] * p_g / 100) + (c_stats['p'] * c_g / 100) + s_stats['p']
+        total_cal = (p_stats['cal'] * p_g / 100) + (c_stats['cal'] * c_g / 100) + s_stats['cal']
+        
+        st.metric("总热量", f"{int(total_cal)} kcal")
+        st.write(f"蛋白质完成度: {int(total_p)}g / {daily_protein_target}g")
+        st.progress(min(total_p / daily_protein_target, 1.0))
+        st.caption(f"这一餐贡献了你全天 {int(total_p/daily_protein_target*100)}% 的蛋白质目标！")
 
-# --- 计算逻辑 ---
-def calc(name, category, gram):
-    item = data[category][name]
-    ratio = gram / 100
-    return {k: v * ratio for k, v in item.items()}
+with tab2:
+    st.subheader("📅 5天不重样备餐建议")
+    if st.button("🪄 一键生成工作日方案"):
+        import random
+        plan_data = []
+        for day in ["Mon", "Tue", "Wed", "Thu", "Fri"]:
+            p = random.choice(list(ingredients["Protein (肉类/蛋白质)"].keys()))
+            c = random.choice(list(ingredients["Carbs (碳水/主食)"].keys()))
+            s = random.choice(list(ingredients["Sauces (灵魂酱料)"].keys()))
+            plan_data.append({"日期": day, "蛋白质": p, "碳水": c, "酱料": s})
+        
+        df = pd.DataFrame(plan_data)
+        st.table(df)
+        
+        st.subheader("🛒 建议购物清单 (Shopping List)")
+        st.write(f"- **总肉类需求**: 约 0.75kg - 1.0kg")
+        st.write(f"- **总碳水需求**: 约 0.5kg (干重)")
+        st.write(f"- **蔬菜建议**: 购买 2 棵西兰花, 1 包羊角豆, 3 根胡萝卜")
 
-res_p = calc(p_name, "蛋白质 (Proteins)", p_gram)
-res_c = calc(c_name, "碳水 (Carbs)", c_gram)
-res_s = data["灵魂酱料 (Sauces)"][s_name]
-
-total_cal = res_p['cal'] + res_c['cal'] + res_s['cal']
-total_protein = res_p['p'] + res_c['p'] + res_s['p']
-total_carbs = res_p['c'] + res_c['c'] + res_s['c']
-
-for v in v_names:
-    v_stats = data["蔬菜 (Veggies)"][v]
-    total_cal += v_stats['cal']
-    total_protein += v_stats['p']
-    total_carbs += v_stats['c']
-
-# --- 结果展示 ---
-st.divider()
-col1, col2, col3 = st.columns(3)
-col1.metric("总热量", f"{int(total_cal)} kcal")
-col2.metric("蛋白质", f"{int(total_protein)} g")
-col3.metric("总碳水", f"{int(total_carbs)} g")
-
-st.success(f"✅ **你的组合：** {p_gram}g {p_name} + {c_gram}g {c_name} + {" & ".join(v_names)} + {s_name}")
+st.markdown("---")
+st.info("💡 记得视频里的建议：酱料在吃的时候再加，蔬菜盒底放厨房纸！ [00:02:57]")
