@@ -289,23 +289,23 @@ with tab2:
                 ''', 
                 unsafe_allow_html=True
                 )
-    with tab3:
-    st.subheader("🍳 备餐科学流程")
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.markdown("""
-        ### 🛠️ 工具准备
-        - **不粘平底锅** (最重要的武器)
-        - **电饭煲** (煮糙米和蒸玉米/红薯)
-        - **厨房秤** (保证不吃多)
-        """)
-    with col_b:
-        st.markdown("""
-        ### 👨‍🍳 核心烹饪法
-        1. **水煮法**: 西兰花烫2分钟，淋生抽。
-        2. **嫩煎法**: 鸡肉切片，小火抹薄油，两面2分钟。
-        3. **蒸法**: 煮饭时顺便蒸玉米/红薯。
-        """)
+with tab3:
+        st.subheader("🍳 备餐科学流程")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown("""
+            ### 🛠️ 工具准备
+            - **不粘平底锅** (最重要的武器)
+            - **电饭煲** (煮糙米和蒸玉米/红薯)
+            - **厨房秤** (保证不吃多)
+            """)
+        with col_b:
+            st.markdown("""
+            ### 👨‍🍳 核心烹饪法
+            1. **水煮法**: 西兰花烫2分钟，淋生抽。
+            2. **嫩煎法**: 鸡肉切片，小火抹薄油，两面2分钟。
+            3. **蒸法**: 煮饭时顺便蒸玉米/红薯。
+            """)
 
 st.divider()
 st.caption("Built with ❤️ for your 80kg to 70kg Journey.")
