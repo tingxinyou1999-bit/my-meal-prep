@@ -289,6 +289,7 @@ with tab2:
                 ''', 
                 unsafe_allow_html=True
             )
+    with tab3:
     st.subheader("🍳 备餐科学流程 (0 经验/无空气炸锅版)")
     col_a, col_b = st.columns(2)
     with col_a:
