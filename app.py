@@ -15,22 +15,19 @@ st.markdown("""
     header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 调整主体宽度，比默认的稍宽一点点，但绝不拉伸全屏 */
+    /* 调整主体宽度，比默认的稍宽一点点，在手机上完美适配 */
     .block-container {
         max-width: 900px;
         padding-top: 2rem;
     }
 
-    /* 侧边栏标题优化，防止换行 */[data-testid="stSidebar"] h1 {
-        font-size: 1.5rem !important;
-    }
-
-    /* 指标卡片 (Metrics) 增加悬浮阴影，更有质感 */[data-testid="stMetric"] {
+    /* 指标卡片 (Metrics) 增加悬浮阴影，更有质感 */
+    [data-testid="stMetric"] {
         background-color: #ffffff;
         padding: 15px;
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        border: 1px solid #f0f4f8;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 加深了阴影，让你明显能看出来 */
+        border: 1px solid #e0e6ed;
     }
 
     /* WhatsApp 按钮改为全宽大按钮 */
@@ -47,9 +44,7 @@ st.markdown("""
         font-size: 1.1rem;
         box-shadow: 0 4px 10px rgba(37,211,102,0.3);
         margin-top: 10px;
-        transition: 0.2s;
     }
-    .whatsapp-button:hover { background: #128C7E; transform: translateY(-2px); }
     </style>
     """, unsafe_allow_html=True)
 
